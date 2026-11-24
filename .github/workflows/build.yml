@@ -24,10 +24,13 @@ jobs:
             https://github.com/Anonym3310/AkameKernel-begonia.git \
             kernel
 
+      - name: List available begonia defconfigs
+        run: ls kernel/arch/arm64/configs/ | grep -i begonia || true
+
       - name: Prepare kernel tree (no image build)
         run: |
           cd kernel
-          make ARCH=arm64 O=$GITHUB_WORKSPACE/kout begonia_defconfig
+          make ARCH=arm64 O=$GITHUB_WORKSPACE/kout begonia_user_defconfig
           make ARCH=arm64 O=$GITHUB_WORKSPACE/kout prepare modules_prepare
 
       - name: Download 8821cu driver
