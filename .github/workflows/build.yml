@@ -1,0 +1,53 @@
+name: Build 8821cu for begonia
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git make bc libssl-dev zip
+
+      - name: Download toolchain (aarch64 gcc 4.9)
+        run: |
+          git clone --depth=1 \
+            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+            toolchain
+
+      - name: Download AkameKernel sources
+        run: |
+          git clone --depth=1 \
+            https://github.com/Anonym3310/AkameKernel-begonia.git \
+            kernel
+
+      - name: Prepare kernel tree (no image build)
+        run: |
+          cd kernel
+          make ARCH=arm64 O=$GITHUB_WORKSPACE/kout begonia_defconfig
+          make ARCH=arm64 O=$GITHUB_WORKSPACE/kout prepare modules_prepare
+
+      - name: Download 8821cu driver
+        run: |
+          git clone --depth=1 \
+            https://github.com/rugameuser/8821cu-20210118.git \
+            driver
+
+      - name: Build module
+        run: |
+          cd driver
+          make ARCH=arm64 \
+            CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/aarch64-linux-android-4.9/bin/aarch64-linux-android- \
+            KSRC=$GITHUB_WORKSPACE/kout \
+            -j$(nproc)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 8821cu-begonia
+          path: |
+            driver/8821cu.ko
+            driver/RTL8821C/*.bin
